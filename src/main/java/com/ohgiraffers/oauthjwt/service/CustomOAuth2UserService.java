@@ -1,10 +1,8 @@
 package com.ohgiraffers.oauthjwt.service;
 
 import com.ohgiraffers.oauthjwt.dto.*;
-import com.ohgiraffers.oauthjwt.entity.RefreshEntity;
-import com.ohgiraffers.oauthjwt.entity.UserEntity;
-import com.ohgiraffers.oauthjwt.repository.RefreshRepository;
-import com.ohgiraffers.oauthjwt.repository.UserRepository;
+import com.ohgiraffers.oauthjwt.entityDTO.UserEntity;
+import com.ohgiraffers.oauthjwt.mapper.UserMapper;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -12,16 +10,14 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
-
 @Service
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
-    private UserRepository userRepository;
+    private UserMapper userMapper;
 //    private RefreshRepository refreshRepository;
 
-    public CustomOAuth2UserService(UserRepository userRepository,RefreshRepository refreshRepository) {
-        this.userRepository = userRepository;
+    public CustomOAuth2UserService(UserMapper userMapper) {
+        this.userMapper=userMapper;
 //        this.refreshRepository = refreshRepository;
     }
 
@@ -56,22 +52,19 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         //리소스 서버에서 발급 받은 정보로 사용자를 특정할 아이디값을 만듬
         String username = oAuth2Response.getProvider() + " " + oAuth2Response.getProviderId();
-
-        UserEntity existData = userRepository.findByUsername(username);
+        System.out.println("username = " + username);
+        UserEntity existData = userMapper.findByUsername(username);
 
         if (existData == null) {
 
             UserEntity userEntity = new UserEntity();
+
             userEntity.setUsername(username);
             userEntity.setEmail(oAuth2Response.getEmail());
             userEntity.setName(oAuth2Response.getName());
             userEntity.setRole("ROLE_USER");
 
-            userRepository.save(userEntity);
-
-//            // Refresh token 관리 예시
-//            String refreshToken = generateRefreshToken();
-//            addRefreshEntity(username, refreshToken, 86400000L);
+            userMapper.saveUserEntity(userEntity);
 
             UserDTO userDTO = new UserDTO();
             userDTO.setUsername(username);
@@ -83,14 +76,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
             existData.setEmail(oAuth2Response.getEmail());
             existData.setName(oAuth2Response.getName());
-
-            userRepository.save(existData);
-
-//            // Refresh token 관리 예시
-//            String refreshToken = generateRefreshToken();
-//            addRefreshEntity(username, refreshToken ,86400000L);
-
             UserDTO userDTO = new UserDTO();
+
+            userDTO.setEmail(existData.getEmail());
+            userDTO.setName(existData.getName());
+
             userDTO.setUsername(existData.getUsername());
             userDTO.setName(oAuth2Response.getName());
             userDTO.setRole(existData.getRole());

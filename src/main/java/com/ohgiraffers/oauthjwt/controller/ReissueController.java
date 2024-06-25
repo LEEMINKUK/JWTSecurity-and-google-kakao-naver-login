@@ -1,8 +1,8 @@
 package com.ohgiraffers.oauthjwt.controller;
 
-import com.ohgiraffers.oauthjwt.entity.RefreshEntity;
+import com.ohgiraffers.oauthjwt.entityDTO.RefreshEntity;
 import com.ohgiraffers.oauthjwt.jwt.JWTUtil;
-import com.ohgiraffers.oauthjwt.repository.RefreshRepository;
+import com.ohgiraffers.oauthjwt.mapper.UserMapper;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,12 +21,12 @@ public class ReissueController {
 
     private final JWTUtil jwtUtil;
 
-    private RefreshRepository refreshRepository;
+    private UserMapper userMapper;
 
-    public ReissueController(JWTUtil jwtUtil, RefreshRepository refreshRepository) {
+    public ReissueController(JWTUtil jwtUtil, UserMapper userMapper) {
 
         this.jwtUtil = jwtUtil;
-        this.refreshRepository = refreshRepository;
+        this.userMapper = userMapper;
     }
 
     @PostMapping("/reissue")
@@ -68,7 +68,7 @@ public class ReissueController {
         }
 
         //DB에 저장되어 있는지 확인
-        Boolean isExist = refreshRepository.existsByRefresh(refresh);
+        Boolean isExist = userMapper.existsByRefresh(refresh);
         if (!isExist) {
 
             //response body
@@ -83,7 +83,7 @@ public class ReissueController {
         String newRefresh = jwtUtil.createJwt("refresh", username, role, 86400000L);
 
         //Refresh 토큰 저장 DB에 기존의 Refresh 토큰 삭제 후 새 Refresh 토큰 저장
-        refreshRepository.deleteByRefresh(refresh);
+        userMapper.deleteByRefresh(refresh);
         addRefreshEntity(username, newRefresh, 86400000L);
 
         //response
@@ -102,14 +102,15 @@ public class ReissueController {
         refreshEntity.setRefresh(refresh);
         refreshEntity.setExpiration(date.toString());
 
-        refreshRepository.save(refreshEntity);
+        userMapper.saveRefreshEntity(refreshEntity);
     }
     private Cookie createCookie(String key, String value) {
 
         Cookie cookie = new Cookie(key, value);
         cookie.setMaxAge(24*60*60);
         //cookie.setSecure(true);
-        //cookie.setPath("/");
+        cookie.setPath("/");
+        cookie.setDomain("localhost");
         cookie.setHttpOnly(true);
 
         return cookie;

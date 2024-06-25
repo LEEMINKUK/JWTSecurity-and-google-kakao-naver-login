@@ -2,10 +2,9 @@ package com.ohgiraffers.oauthjwt.handler;
 
 
 import com.ohgiraffers.oauthjwt.dto.CustomOAuth2User;
-import com.ohgiraffers.oauthjwt.entity.RefreshEntity;
-import com.ohgiraffers.oauthjwt.entity.UserEntity;
+import com.ohgiraffers.oauthjwt.entityDTO.RefreshEntity;
 import com.ohgiraffers.oauthjwt.jwt.JWTUtil;
-import com.ohgiraffers.oauthjwt.repository.RefreshRepository;
+import com.ohgiraffers.oauthjwt.mapper.UserMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,12 +24,12 @@ import java.util.Iterator;
 public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JWTUtil jwtUtil;
-    private RefreshRepository refreshRepository;
+    private UserMapper userMapper;
 
-    public CustomSuccessHandler(JWTUtil jwtUtil,RefreshRepository refreshRepository) {
+    public CustomSuccessHandler(JWTUtil jwtUtil,UserMapper userMapper) {
 
         this.jwtUtil = jwtUtil;
-        this.refreshRepository = refreshRepository;
+        this.userMapper = userMapper;
     }
 
     @Override
@@ -64,10 +63,12 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
 
         //Refresh 토큰 저장
+        userMapper.deleteByRefresh(refresh);
         addRefreshEntity(username, refresh, 86400000L);
 
+
         //응답 설정
-        response.setHeader("refresh", refresh);
+        response.setHeader("access", access);
         response.addCookie(createCookie("refresh", refresh));
         response.setStatus(HttpStatus.OK.value());
 
@@ -84,7 +85,7 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         refreshEntity.setUsername(username);
         refreshEntity.setRefresh(refresh);
         refreshEntity.setExpiration(date.toString());
-        refreshRepository.save(refreshEntity);
+        userMapper.saveRefreshEntity(refreshEntity);
 
     }
 
@@ -100,7 +101,7 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         Cookie cookie = new Cookie(key, value);
         cookie.setMaxAge(24*60*60);
         //cookie.setSecure(true); //https 일 경우
-        cookie.setPath("/");
+        cookie.setDomain("localhost");
         cookie.setHttpOnly(true);
 
         return cookie;
