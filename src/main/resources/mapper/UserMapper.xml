@@ -3,9 +3,9 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.ohgiraffers.oauthjwt.mapper.UserMapper">
+<mapper namespace="com.soop.jwtsecurity.mapper.UserMapper">
 
-    <resultMap id="user" type="com.ohgiraffers.oauthjwt.entityDTO.UserEntity">
+    <resultMap id="user" type="com.soop.jwtsecurity.entityDTO.UserEntity">
         <id property="id" column="id"/>
         <result property="email" column="email"/>
         <result property="name" column="name"/>
@@ -13,14 +13,14 @@
         <result property="username" column="username"/>
     </resultMap>
 
-    <resultMap id="refresh" type="com.ohgiraffers.oauthjwt.entityDTO.RefreshEntity">
+    <resultMap id="refresh" type="com.soop.jwtsecurity.entityDTO.RefreshEntity">
         <id property="id" column="id"/>
         <result property="username" column="username"/>
         <result property="refresh" column="refresh"/>
         <result property="expiration" column="expiration"/>
     </resultMap>
 
-    <select id="findByUsername" resultType="com.ohgiraffers.oauthjwt.entityDTO.UserEntity">
+    <select id="findByUsername" resultType="com.soop.jwtsecurity.entityDTO.UserEntity">
         select
             username
         from userentity
@@ -28,7 +28,7 @@
     </select>
 
 
-    <insert id="saveUserEntity" parameterType="com.ohgiraffers.oauthjwt.entityDTO.UserEntity">
+    <insert id="saveUserEntity" parameterType="com.soop.jwtsecurity.entityDTO.UserEntity">
         INSERT INTO userentity
         (
            email
@@ -45,30 +45,41 @@
         )
     </insert>
 
-    <insert id="saveRefreshEntity" parameterType="com.ohgiraffers.oauthjwt.entityDTO.RefreshEntity">
-        INSERT INTO refreshentity
-        (
-
-           username
-        ,   refresh
-        ,   expiration
+    <insert id="saveRefreshEntity" parameterType="com.soop.jwtsecurity.entityDTO.RefreshEntity">
+        INSERT INTO refreshentity (username, refresh, expiration)
+        VALUES (
+              #{username}
+            , #{refresh}
+            , #{expiration}
         )
-        values
+        ON DUPLICATE KEY UPDATE
+        refresh = VALUES
         (
-           #{username}
-        ,   #{refresh}
-        ,   #{expiration}
+        refresh
+        ),
+        expiration = VALUES
+        (
+        expiration
         )
     </insert>
 
-    <select id="existsByRefresh" parameterType="com.ohgiraffers.oauthjwt.entityDTO.RefreshEntity">
+
+    <select id="searchRefreshEntity" parameterType="com.soop.jwtsecurity.entityDTO.RefreshEntity">
         select
-            refresh
-        from refreshentity
-        where refresh = #{refresh}
+            A.refresh
+            from refreshentity A
+            join userentity B on A.username = B.username
+            where A.username = #{username}
     </select>
 
-    <delete id="deleteByRefresh" parameterType="com.ohgiraffers.oauthjwt.entityDTO.RefreshEntity">
+    <select id="existsByRefresh" parameterType="String" resultType="Boolean">
+        select
+            case when count(*) > 0 then true else false end
+            from refreshentity
+            where refresh = #{refresh}
+    </select>
+
+    <delete id="deleteByRefresh" parameterType="com.soop.jwtsecurity.entityDTO.RefreshEntity">
         delete from refreshentity
            where refresh = #{refresh}
     </delete>
